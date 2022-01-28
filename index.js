@@ -46,7 +46,6 @@ io.on("connection", function (socket) {
         // console.log(rooms_liste);
     });
 
-    
 
     socket.on("ready", function(roomName){
         // socket.broadcast.to => broadcast to all sockets
@@ -71,6 +70,13 @@ io.on("connection", function (socket) {
         console.log(" je suis dans Answer ");
         socket.broadcast.to(roomName).emit("answer", answer);
         console.log("Answer = "+answer);
+    });
+
+
+
+    socket.on("leave", function(roomName){
+        socket.leave(roomName);
+        socket.broadcast.to(roomName).emit("leave");
     });
 
 });

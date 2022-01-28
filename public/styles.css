@@ -64,4 +64,27 @@ button {
   width: 100%;
 }
 
+#option-button {
+  background-color: black !important;
+  display: flex;
+  text-align: center;
+  border: 20px;
+}
 
+#video-chat-lobby{
+  margin: 10px auto;
+  text-align: center;
+  width: 600px;
+}
+
+#video-chat-room{
+  text-align: center;
+}
+
+#user-video{
+  padding: 20px;
+}
+
+#peer-video{
+  padding: 20px;
+}

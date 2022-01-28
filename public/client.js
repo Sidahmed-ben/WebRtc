@@ -2,16 +2,90 @@
 $(function () {
 
 
-    var socket = io.connect("http://localhost:4000");
-    var divVideoChatLobby = document.getElementById("video-chat-lobby");
-    var divVideoChat = document.getElementById("video-chat-room");
-    var joinButton = document.getElementById("join");
-    var userVideo = document.getElementById("user-video");
-    var peerVideo = document.getElementById("peer-video");
-    var roomInput = document.getElementById("roomName");
-    var creator   = false; 
-    var rtcPeerConnection;
-    var userStream ;
+    let socket = io.connect("http://localhost:4000");
+    let divVideoChatLobby = document.getElementById("video-chat-lobby");
+    let divVideoChat = document.getElementById("video-chat-room");
+    let joinButton = document.getElementById("join");
+    let userVideo = document.getElementById("user-video");
+    let peerVideo = document.getElementById("peer-video");
+    let roomInput = document.getElementById("roomName");
+    let buttonOption = document.getElementById("option-button");
+
+
+    let muteBool   = true;
+    let cameraBool = true; 
+
+    let creator   = false; 
+    let rtcPeerConnection;
+    let userStream ;
+    let constraints = { audio: true, video: { width: 500, height: 500 } };
+
+
+    $("#Mute").click(function(){
+        muteBool = !muteBool ;
+        if(muteBool){
+            $(this).text("Voice");
+            console.log(constraints);
+            userStream.getTracks()[0].enabled = false;
+        }else{
+            $(this).text("Mute");
+            userStream.getTracks()[0].enabled = true;
+        }
+    });
+
+    $("#Hide-camera").click(function(){
+        cameraBool = !cameraBool ;
+        if(cameraBool){
+            $(this).text("Show Camera");
+            userStream.getTracks()[1].enabled = true;
+            console.log(userStream.getTracks());
+        }else{
+            $(this).text("Hide Camera");
+            userStream.getTracks()[1].enabled = false;
+        }
+    });
+     
+    $("#Leave-room").click(function(){
+        socket.emit("leave", roomInput.value);
+        divVideoChatLobby.style= "display:block";
+        buttonOption.style = "display:none";
+
+        console.log(userVideo.srcObject);
+        if(userVideo.srcObject){
+            
+            userVideo.srcObject.getTracks()[0].stop();
+            userVideo.srcObject.getTracks()[1].stop();
+        }
+
+        if(peerVideo.srcObject){
+            peerVideo.srcObject.getTracks()[0].stop();
+            peerVideo.srcObject.getTracks()[1].stop();
+        }
+
+        if(rtcPeerConnection){
+            rtcPeerConnection.ontrack = null ;
+            rtcPeerConnection.onicecandidate = null ;
+            rtcPeerConnection.close() ;
+            rtcPeerConnection = null ;
+        }
+
+    });
+
+    
+    socket.on("leave", function(){
+        console.log(" je suis dans leave 3emmiiii ");
+        if(rtcPeerConnection){
+            rtcPeerConnection.ontrack = null ;
+            rtcPeerConnection.onicecandidate = null ;
+            rtcPeerConnection.close() ;
+            rtcPeerConnection = null ;
+        }
+        if(peerVideo.srcObject){
+            peerVideo.srcObject.getTracks()[0].stop();
+            peerVideo.srcObject.getTracks()[1].stop();
+        }
+
+    });
 
 
     // Create Ice Framework 
@@ -33,33 +107,43 @@ $(function () {
         }
     });
 
+    window.addEventListener("keydown", function(event){
+        if(event.key == "Enter"){
+            joinButton.click();
+        }
+    });
+
     socket.on("created" , function(){
         creator = true;
         console.log("Room Created");
-        var constraints = { audio: false, video: { width: 1280, height: 720 } };
+        // constraints = { audio: false, video: { width: 500, height: 500 } };
         navigator.mediaDevices.getUserMedia(constraints)
-            .then(function (mediaStream) {
+            .then(function (mediaStream) { 
                 userStream = mediaStream;
                 userVideo.srcObject = mediaStream;
+                console.log(userVideo.srcObject);
                 userVideo.onloadedmetadata = function (e) {
                     userVideo.play();
                 };
                 divVideoChatLobby.style= "display:none";
+                buttonOption.style = "display:flex";
             })
             .catch(function (err) { console.log(err.name + ": " + err.message); }); // always check for errors at the end.
     });
 
     socket.on("joined" , function(){
         console.log("Room Joined");
-        var constraints = { audio: false, video: { width: 1280, height: 720 } };
+        // let constraints = { audio: false, video: { width: 500, height: 500 } };
         navigator.mediaDevices.getUserMedia(constraints)
             .then(function (mediaStream) {
                 userStream = mediaStream;
                 userVideo.srcObject = mediaStream;
+                
                 userVideo.onloadedmetadata = function (e) {
                     userVideo.play();
                 };
                 divVideoChatLobby.style= "display:none";
+                buttonOption.style = "display:flex";
                 socket.emit("ready", roomInput.value);
             })
             .catch(function (err) { console.log(err.name + ": " + err.message); }); // always check for errors at the end.
@@ -84,7 +168,7 @@ $(function () {
             // This function sends the stream to the other client.
             // 0 -> audio / 1 -> vidéo
             rtcPeerConnection.addTrack(userStream.getTracks()[0], userStream);
-            // rtcPeerConnection.addTrack(userStream.getTracks()[1], userStream);
+            rtcPeerConnection.addTrack(userStream.getTracks()[1], userStream);
 
             // send offer to other client(peer)
             rtcPeerConnection.createOffer(
@@ -102,7 +186,7 @@ $(function () {
     });
 
     socket.on("candidate" , function(candidate){
-        var ice = new RTCIceCandidate(candidate);
+        let ice = new RTCIceCandidate(candidate);
         console.log("candidate => ");
         console.log(ice);
         rtcPeerConnection.addIceCandidate(ice);
@@ -120,7 +204,8 @@ $(function () {
             // This function sends the stream to the other client.
             // 0 -> audio / 1 -> vidéo
             rtcPeerConnection.addTrack(userStream.getTracks()[0], userStream);
-            // rtcPeerConnection.addTrack(userStream.getTracks()[1], userStream);S
+            rtcPeerConnection.addTrack(userStream.getTracks()[1], userStream);
+
             rtcPeerConnection.setRemoteDescription(offer);
             // send offer to other client(peer)
             rtcPeerConnection
@@ -142,13 +227,11 @@ $(function () {
     });
 
 
-
     function onIceCandidateFunction(event){
         if(event.candidate){
             socket.emit("candidate",event.candidate,roomInput.value);
         }   
     }
-
 
     function OntrackFunction(event){
         peerVideo.srcObject = event.streams[0];
