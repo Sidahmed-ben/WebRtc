@@ -2,7 +2,7 @@
 $(function () {
 
 
-    let socket = io.connect("http://localhost:4000");
+    let socket = io();
     let divVideoChatLobby = document.getElementById("video-chat-lobby");
     let divVideoChat = document.getElementById("video-chat-room");
     let joinButton = document.getElementById("join");
@@ -73,6 +73,7 @@ $(function () {
 
     
     socket.on("leave", function(){
+        creator = true;
         console.log(" je suis dans leave 3emmiiii ");
         if(rtcPeerConnection){
             rtcPeerConnection.ontrack = null ;

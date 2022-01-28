@@ -1,9 +1,10 @@
 const express = require('express');
 const socket  = require('socket.io'); 
 const app = express();
-
+const port = 4000;
+const hostname = '0.0.0.0';
 // Create a server 
-var server = app.listen(4000,function(){
+var server = app.listen(port,hostname,function(){
     console.log("Server is runing : Listening in port 4000");
 });
 
