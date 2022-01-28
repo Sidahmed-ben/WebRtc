@@ -1,7 +1,7 @@
 const express = require('express');
 const socket  = require('socket.io'); 
 const app = express();
-const port = 4000;
+const port = process.env.PORT || 5000;
 const hostname = '0.0.0.0';
 // Create a server 
 var server = app.listen(port,hostname,function(){
